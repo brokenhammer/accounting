@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0" />
+    <title>记账</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+        integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+    <style>
+        /* html{height: 100px;} */
+        body{margin-bottom:74px;}
+        .submit-btn {
+            width: 100%;
+            /* position: absolute; */
+            /* bottom: 0; */
+            background: rgb(29, 161, 250);
+            /* margin-top:50px; */
+            height: 50px;
+            text-align: center;
+            font-size: 40px;
+            margin: 0px auto;
+            display: table;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="container-fluid">
+            <h1>总消费:{{total}}美元</h1>
+            <form>
+                <div class="row">
+                    <div class="form-group col-sm-4">
+                        <label for="dateInput" class="col-form-label col-sm-12">日期</label>
+                        <div class="col-sm-12">
+                            <input v-model:value="date" name="dateInput" type="date" class="form-control"
+                                id="dateInput">
+                            <small>每天都要记账!</small>
+                        </div>
+                        <label for="affiliated" class="col-form-label col-sm-12">想说的话</label>
+                        <div class="col-sm-12">
+                            <textarea v-model:value="costs.affiliated" rows=10 name="affiliated" class="form-control"
+                                id="affiliated"></textarea>
+                        </div>
+                    </div>
+                    <div class="col-sm-8">
+                        <div v-if="costsInDB.records.length===0" class="form-group col-sm-12">
+                            <div class="input-group">
+                                <select name="costType" id="costType" class="custom-select">
+                                    <option disabled selected value="">消费类型</option>
+                                    <option value="daily">日常消费</option>
+                                    <option value="tex">税</option>
+                                    <option value="onetime">一次性</option>
+                                </select>
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">$</span>
+                                </div>
+                                <input name="costInput" id="costInput" type="number" step=0.01 class="form-control"
+                                    aria-label="cost" placeholder="价格" aria-describedby="cst-addon1" />
+                                <input type="text" id="itemName" placeholder="物品名称" />
+                                <div class="input-group-append"><span class="btn btn-danger">
+                                        <i class="fas fa-minus-circle"></i>
+                                    </span></div>
+                            </div>
+                        </div>
+                        <div v-else v-for="record in costsInDB.records" class="form-group col-sm-12">
+                            <div class="input-group">
+                                <select name="costType" id="costType" class="custom-select" v-model="record.type">
+                                    <option disabled selected value="">消费类型</option>
+                                    <option value="daily">日常消费</option>
+                                    <option value="tex">税</option>
+                                    <option value="onetime">一次性</option>
+                                </select>
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">$</span>
+                                </div>
+                                <input name="costInput" id="costInput" type="number" step=0.01 class="form-control"
+                                    aria-label="cost" :value="record.cost" aria-describedby="cst-addon1" />
+                                <input name="itemName" :value="record.item" type="text" id="itemName" />
+                                <div class="input-group-append"><span class="btn btn-danger">
+                                        <i class="fas fa-minus-circle"></i>
+                                    </span></div>
+                            </div>
+                        </div>
+                        <div class="col-sm-12" style="text-align: center; color:#F4B400; text-shadow: 1px 1px #CCCCCC;">
+                            <i class="fas fa-4x fa-plus-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+    
+</body>
+<div class="navbar fixed-bottom" style="margin: 0; padding: 0">
+        <div class="submit-btn" style="background:rgb(66,133,244); color:#EEEEEE">Submit</div>
+</div>
+
+<script>
+    var today = new Date();
+    today_str = today.getFullYear() + "-" + ("0" + today.getMonth()).slice(-2) + "-" + ("0" + today.getDate()).slice(-2);
+    var date_ctrl = document.getElementsByName("dateInput");
+    date_ctrl[0].value = today_str
+    app = new Vue({
+        el: "#app",
+        data: {
+            date: "None",
+            costs: {},
+            abc: "tex"
+        },
+        created: function () {
+            var today = new Date()
+            this.date = today.getFullYear() + "-" + ("0" + (today.getMonth() + 1)).slice(-2) + "-" + ("0" + today.getDate()).slice(-2);
+        },
+        computed: {
+            total: function(){
+                return this.summ(this.costs)
+            },
+            costsInDB: function () {
+                return this.quiery(this.date)
+            },
+            submit_form: function () {
+                return { date: this.date, costs: this.costs }
+            }
+        },
+        methods: {
+            summ: function(costs){
+                var tmp = 0;
+                for(var ind in this.costs.records){
+                    tmp += this.costs.records[ind].cost
+                }
+                return tmp.toFixed(2)
+            },
+            quiery: function (date) {
+                if (this.date === "2019-02-23") {
+                    this.costs = { "affiliated": "", "records": [] }
+                    return this.costs
+                } else {
+                    this.costs = {
+                        "affiliated": "拖鞋太贵了",
+                        "records": [
+                            { "type": "onetime", "cost": 5.58, "item": "床" },
+                            { "type": "tex", "cost": 4.4 },
+                            { "type": "daily", "cost": 22.4, "item": "Uber" },
+                            { "type": "onetime", "cost": 22.4, "item": "拖鞋" }
+                        ]
+                    }
+                    return this.costs
+                }
+            }
+        }
+    })
+</script>
+
+</html>
