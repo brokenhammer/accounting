@@ -1,0 +1,10 @@
+submit_btn = new Vue({
+	el: "#submit-btn",
+	methods: {
+		submit() {
+			app.costs.records = app.costs.records.filter(item => item.new === false)
+			console.log(JSON.stringify({ date: app.date, costs: app.costs }))
+			alert("已提交!")
+		}
+	}
+})

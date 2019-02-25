@@ -1,0 +1,22 @@
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script>
+
+<div id="app">{{hhh.affiliated}}<span>{{d2}}</span></div>
+
+<script>
+    var app = new Vue({
+        el: "#app",
+        data: {
+            hhh:"",
+            d2: 35
+        },
+        created: function(){
+            console.log('created!')
+            var vm = this
+            axios.get("http://127.0.0.1:5000/api/get/2019-02-23").then(function(response){
+                console.log(response)
+                vm.hhh = response.data
+            })
+        }
+    })
+</script>
