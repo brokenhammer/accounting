@@ -1,9 +1,8 @@
 from flask import Flask
 import os
-from flask_cors import CORS
 
 app = Flask(__name__, instance_relative_config=True)
-CORS(app)
+
 app.jinja_env.variable_start_string = '{{{{'
 app.jinja_env.variable_end_string = '}}}}'
 app.config.from_object('config')
