@@ -24,6 +24,7 @@
 		/* html{height: 100px;} */
 		body {
 			margin-bottom: 74px;
+			color: #3a585f
 		}
 
 		.submit-btn {
@@ -38,24 +39,19 @@
 			margin: 0px auto;
 			display: table;
 		}
+		.dlt-btn{
+			background: #e4525e;
+			color: #e6e6e6
+		}
 	</style>
 </head>
 
 <body>
 
-	{% with messages = get_flashed_messages() %}
-	{% if messages %}
-	<ul class=flashes>
-		{% for message in messages %}
-		<li>{{ message }}</li>
-		{% endfor %}
-	</ul>
-	{% endif %}
-	{% endwith %}
+
 	<div id="app">
 		<div class="container-fluid">
 			<h1>总消费:{{total}}美元</h1>
-			<form>
 				<div class="row">
 					<div class="form-group col-sm-4">
 						<label for="dateInput" class="col-form-label col-sm-12">日期</label>
@@ -73,16 +69,17 @@
 						<div v-if="costs.records.length===0">
 							<h4>今天竟然没花钱?</h4>
 						</div>
-						<div v-for="(record, index) in costs.records" class="form-group col-sm-12">
-							<bar v-bind:index="index" v-bind:record="record" @sendnew="switchNew" @remove="remove">
+						<div v-else v-for="(record, index) in costs.records" class="form-group col-sm-12">
+							<bar v-bind:type="record.type" 
+							 v-bind:cost="record.cost" @sendnew="switchNew(index)"
+							v-bind:item="record.item" @remove="costs.records.splice(index,1)">
 							</bar>
 						</div>
-						<div class="col-sm-12" style="text-align: center; color:#F4B400; text-shadow: 1px 1px #CCCCCC;">
+						<div class="col-sm-12" style="text-align: center; color:#F4B400; text-shadow: 1px 1px #918d69;">
 							<i class="fas fa-4x fa-plus-circle" @click="addNew"></i>
 						</div>
 					</div>
 				</div>
-			</form>
 		</div>
 	</div>
 	<div class="modal fade" id="myModal" tabindex="-1" role="dialog">
@@ -105,14 +102,17 @@
 
 	</div>
 </body>
-<!-- <div id="submit-btn" class="navbar fixed-bottom" style="margin: 0; padding: 0">
+<div id="submit-btn" class="navbar fixed-bottom" style="margin: 0; padding: 0">
 	<button @click="submit" class="btn submit-btn"
-		style="background:#00343F; color:#EEEEEE; border-radius: 0; border:0; padding: 0px;">提交记录</button>
-</div> -->
+		style="background:rgb(71, 79, 90); color:#EEEEEE; border-radius: 0; border:0; padding: 0px;">提交记录</button>
+</div>
 <script>
 	Vue.component('bar', {
 		data: function () {
 			return {
+				cost_com:{},
+				type_com:{},
+				item_com:{},
 				options: [
 					{ id: 1, value: "daily", text: "日常消费" },
 					{ id: 2, value: "tex", text: "税" },
@@ -120,33 +120,20 @@
 				],
 			}
 		},
-		props: ['record', 'index'],
-		//updated: function () {
-		//	alert('to emit')
-		//	this.$emit('sendnew', { index: this.index, truethy: this.new })
-		//},
-		computed: {
-			new: function () {
-				var truethy = true
-				if (this.record.cost === "" || parseFloat(this.record.cost) <= 0 || this.record.type === "") {
-					truethy = true
-				} else {
-					truethy =  false
-				}
-				this.$emit('sendnew', {index: this.index, truethy: truetry})
-				
-			}
+		props: ['cost', 'type', 'item'],
+		created:function(){
+			this.cost_com =  this.cost,
+			this.type_com = this.type
+			this.item_com = this.item
 		},
-		methods: {
-			remove() {
-				alert('remove my self')
-				this.$emit('remove', { index: this.index })
-			}
+		updated: function(){
+			var truethy = (this.cost_com === "" || parseFloat(this.cost_com) <= 0 || this.type_com === "")
+			this.$emit("send-new",{"truethy":truethy})
 		},
 		template:
 			`
 		<div class= "input-group">
-			<select class="custom-select" v-model="record.type">
+			<select class="custom-select" v-model="type_com">
 				<option disabled selected value="">消费类型</option>
 				<option v-for="opt in options" :value="opt.value">{{opt.text}}</option>
 			</select>
@@ -154,11 +141,13 @@
 				<span class="input-group-text">$</span>
 			</div>
 			<input type="number" step=0.01 class= "form-control"
-				aria-label="cost" v-model:value="record.cost" aria-describedby="cst-addon1" />
-			<input name="itemName" v-model:value="record.item" type="text"/>
-			<button class="input-group-append" style="padding: 0; border-radius: 0; border:0"><span class="btn btn-danger" @click="remove">
+				aria-label="cost" v-model:value="cost_com" aria-describedby="cst-addon1" />
+			<input name="itemName" v-model:value="item_com" type="text"/>
+			<button class="input-group-append" style="padding: 0; border-radius: 0; border:0">
+				<span class="btn dlt-btn" @click="$emit('remove')">
 				<i class="fas fa-minus-circle"></i>
-			</span></button>
+				</span>
+			</button>
 		</div>`
 
 	})
@@ -168,16 +157,14 @@
 		data: {
 			costs: { records: [] },
 			date: "",
-			abc: "tex",
-			nextId: 0
 		},
 		created: function () {
 			this.date = "2019-02-23"
-			//	this.query()
+			this.query()
 		},
 		watch: {
 			date: function () {
-				console.log("new date", this.date)
+				alert('watch_date')
 				this.query()
 			}
 		},
@@ -190,6 +177,7 @@
 				return { date: this.date, costs: this.costs }
 			},
 			allowAdd: function () {
+				alert('allowadd')
 				var tmpStatus = false
 				for (var ind in this.costs.records) {
 					tmpStatus = this.costs.records[ind].new || tmpStatus
@@ -208,7 +196,11 @@
 						vm.costs = { "affiliated": "", records: [] }
 						vm.addNew()
 					} else {
-						vm.costs = response.data
+						var tmp = response.data
+						for(var ind in tmp.records){
+							tmp.records[ind]['new'] = false
+						}
+						vm.costs = tmp
 					}
 				})
 			},
@@ -220,22 +212,18 @@
 				}
 				return tmp.toFixed(2)
 			},
-			remove(data) {
-				alert('remove in app')
-				this.costs.records.splice(data.index, 1)
-			},
 			addNew() {
+				alert('addNew')
 				if (this.allowAdd) {
-					this.nextId++
-					this.costs.records.push({ "id": this.nextId, "type": "", "cost": 0, "item": "", new: true })
+					this.costs.records.push({"type": "", "cost": 0, "item": "", "new": true })
 				}
 				else {
 					$('#myModal').modal()
 				}
 			},
-			switchNew: function (data) {
-				this.costs.records[data.index].new = data.truethy
-			},
+			switchNew(index){
+
+			}
 		}
 	})
 </script>

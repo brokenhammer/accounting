@@ -37,4 +37,4 @@ def set_entry(date):
 
 @app.route('/test')
 def test():
-    return render_template('vue-axios.html')
+    return render_template('tmp.html')
